@@ -3,6 +3,12 @@ import {
   FilesetResolver,
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 
+// A page with an "unload" listener is excluded from the browser's
+// back-forward cache, so re-opening this tab does a real reload (fetching
+// the current deployed index.html/app.js/style.css) instead of resurrecting
+// a stale in-memory copy of the page from before the last update.
+window.addEventListener("unload", () => {});
+
 const WASM_BASE =
   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 const MODEL_URL =

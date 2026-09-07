@@ -58,6 +58,13 @@ button:active { transform: scale(0.97); }
   margin-top: 16px;
 }
 
+.build-version {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-top: 24px;
+  opacity: 0.6;
+}
+
 .hud {
   display: flex;
   justify-content: space-between;
