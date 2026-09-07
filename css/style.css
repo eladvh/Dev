@@ -121,11 +121,12 @@ button:active { transform: scale(0.97); }
 
 .face-guide {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  transform: scaleX(-1);
+  top: 12px;
+  right: 12px;
+  width: 110px;
+  height: 110px;
   pointer-events: none;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .face-guide[hidden] {

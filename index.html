@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Emoji Faces</title>
-  <link rel="stylesheet" href="css/style.css?v=4" />
+  <link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
   <div id="start-screen" class="screen">
@@ -34,8 +34,8 @@
       <video id="video" autoplay playsinline muted></video>
       <canvas id="overlay"></canvas>
       <svg id="face-guide" class="face-guide" viewBox="0 0 200 200" hidden>
-        <circle cx="100" cy="100" r="92" fill="rgba(10,12,20,0.55)" stroke="#ffb800" stroke-width="4" stroke-dasharray="6 6" />
-        <g id="face-guide-features" fill="none" stroke="#ffb800" stroke-width="7" stroke-linecap="round"></g>
+        <circle cx="100" cy="100" r="96" fill="#14151f" stroke="#ffb800" stroke-width="6" />
+        <g id="face-guide-features" fill="none" stroke="#ffb800" stroke-width="10" stroke-linecap="round"></g>
       </svg>
       <div id="match-banner" class="match-banner" hidden>Nice! 🎉</div>
     </div>
@@ -43,6 +43,6 @@
     <div id="status" class="status">Loading face detector…</div>
   </div>
 
-  <script type="module" src="js/app.js?v=4"></script>
+  <script type="module" src="js/app.js?v=5"></script>
 </body>
 </html>
