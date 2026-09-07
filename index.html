@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Emoji Faces</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="start-screen" class="screen">
+    <h1>Emoji Faces 🎭</h1>
+    <p>Copy the emoji's face with your own face! Great for two players — get your faces in frame together.</p>
+    <button id="start-btn">Start Camera &amp; Play</button>
+    <p id="start-error" class="error" hidden></p>
+  </div>
+
+  <div id="game-screen" class="screen" hidden>
+    <div class="hud">
+      <div class="score">Score: <span id="score">0</span></div>
+      <div class="round">Round <span id="round">1</span></div>
+    </div>
+
+    <div class="target-wrap">
+      <div class="label">Make this face:</div>
+      <div id="target-emoji" class="target-emoji">😊</div>
+    </div>
+
+    <div class="camera-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="overlay"></canvas>
+      <div id="match-banner" class="match-banner" hidden>Nice! 🎉</div>
+    </div>
+
+    <div id="status" class="status">Loading face detector…</div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
