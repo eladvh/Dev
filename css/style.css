@@ -124,6 +124,10 @@ button:active { transform: scale(0.97); }
   animation: pop 0.6s ease;
 }
 
+.match-banner[hidden] {
+  display: none;
+}
+
 @keyframes pop {
   0% { opacity: 0; transform: scale(0.8); }
   20% { opacity: 1; transform: scale(1.05); }

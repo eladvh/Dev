@@ -10,6 +10,7 @@ const MODEL_URL =
 
 const NEUTRAL_THRESHOLD = 0.25;
 const HOLD_MS = 700;
+const CELEBRATE_MS = 2000;
 
 // Each expression scores a raw 0..1 confidence from face blendshape
 // coefficients. The highest-scoring expression (above NEUTRAL_THRESHOLD)
@@ -18,21 +19,25 @@ const EXPRESSIONS = [
   {
     key: "smile",
     emoji: "😊",
+    label: "happy",
     calc: (b) => avg(b("mouthSmileLeft"), b("mouthSmileRight")) * (1 - b("jawOpen") * 0.7),
   },
   {
     key: "laugh",
     emoji: "😂",
+    label: "laughing",
     calc: (b) => avg(b("mouthSmileLeft"), b("mouthSmileRight")) * b("jawOpen"),
   },
   {
     key: "sad",
     emoji: "😢",
+    label: "sad",
     calc: (b) => avg(b("mouthFrownLeft"), b("mouthFrownRight"), b("browInnerUp")),
   },
   {
     key: "surprised",
     emoji: "😲",
+    label: "surprised",
     calc: (b) =>
       avg(
         b("eyeWideLeft"),
@@ -45,6 +50,7 @@ const EXPRESSIONS = [
   {
     key: "angry",
     emoji: "😠",
+    label: "angry",
     calc: (b) =>
       avg(b("browDownLeft"), b("browDownRight"), b("mouthPressLeft"), b("mouthPressRight")),
   },
@@ -86,10 +92,17 @@ let round = 1;
 let target = pickTarget();
 let matchStartTime = null;
 let faceLandmarker = null;
+let celebrating = false;
 
 function pickTarget(excludeKey) {
   const pool = excludeKey ? EXPRESSIONS.filter((e) => e.key !== excludeKey) : EXPRESSIONS;
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function speak(text) {
+  if (!("speechSynthesis" in window)) return;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
 }
 
 function showTarget() {
@@ -97,13 +110,10 @@ function showTarget() {
   targetEmojiEl.classList.remove("pop");
   void targetEmojiEl.offsetWidth;
   targetEmojiEl.classList.add("pop");
+  speak(`Do a ${target.label} face!`);
 }
 
 function nextRound() {
-  score += 1;
-  round += 1;
-  scoreEl.textContent = String(score);
-  roundEl.textContent = String(round);
   target = pickTarget(target.key);
   showTarget();
   matchStartTime = null;
@@ -111,8 +121,18 @@ function nextRound() {
 }
 
 function celebrate() {
+  celebrating = true;
+  matchStartTime = null;
   matchBanner.hidden = false;
-  setTimeout(nextRound, 900);
+  statusEl.textContent = "Nice! 🎉";
+  setTimeout(() => {
+    score += 1;
+    round += 1;
+    scoreEl.textContent = String(score);
+    roundEl.textContent = String(round);
+    celebrating = false;
+    nextRound();
+  }, CELEBRATE_MS);
 }
 
 async function createFaceLandmarker(filesetResolver) {
@@ -141,6 +161,11 @@ startBtn.addEventListener("click", start);
 async function start() {
   startBtn.disabled = true;
   startError.hidden = true;
+  // Unlock speech synthesis on browsers (notably iOS Safari) that only allow
+  // audio APIs to fire synchronously within a user-gesture handler.
+  if ("speechSynthesis" in window) {
+    window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
+  }
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } },
@@ -192,6 +217,8 @@ function detectLoop() {
 
 function handleResult(result) {
   ctx.clearRect(0, 0, overlay.width, overlay.height);
+
+  if (celebrating) return;
 
   const faces = result.faceBlendshapes || [];
   if (faces.length === 0) {
