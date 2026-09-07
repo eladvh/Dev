@@ -32,7 +32,10 @@ const EXPRESSIONS = [
     key: "sad",
     emoji: "😢",
     label: "sad",
-    calc: (b) => avg(b("mouthFrownLeft"), b("mouthFrownRight"), b("browInnerUp")),
+    // mouthFrown is the primary, controllable cue; most people don't raise
+    // their inner brows on cue, so that's a bonus rather than a requirement
+    // (an even split with avg() made this expression very hard to trigger).
+    calc: (b) => Math.min(1, avg(b("mouthFrownLeft"), b("mouthFrownRight")) * 1.4 + b("browInnerUp") * 0.25),
   },
   {
     key: "surprised",
