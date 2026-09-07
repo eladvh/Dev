@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Emoji Faces</title>
-  <link rel="stylesheet" href="css/style.css?v=6" />
+  <link rel="stylesheet" href="css/style.css?v=7" />
 </head>
 <body>
   <div id="start-screen" class="screen">
@@ -12,7 +12,7 @@
     <p>Copy the emoji's face with your own face! Great for two players — get your faces in frame together.</p>
     <button id="start-btn">Start Camera &amp; Play</button>
     <p id="start-error" class="error" hidden></p>
-    <p class="build-version">Build v6</p>
+    <p class="build-version">Build v7</p>
   </div>
 
   <div id="game-screen" class="screen" hidden>
@@ -34,16 +34,12 @@
     <div class="camera-wrap">
       <video id="video" autoplay playsinline muted></video>
       <canvas id="overlay"></canvas>
-      <svg id="face-guide" class="face-guide" viewBox="0 0 200 200" hidden>
-        <circle cx="100" cy="100" r="96" fill="#14151f" stroke="#ffb800" stroke-width="6" />
-        <g id="face-guide-features" fill="none" stroke="#ffb800" stroke-width="10" stroke-linecap="round"></g>
-      </svg>
       <div id="match-banner" class="match-banner" hidden>Nice! 🎉</div>
     </div>
 
     <div id="status" class="status">Loading face detector…</div>
   </div>
 
-  <script type="module" src="js/app.js?v=6"></script>
+  <script type="module" src="js/app.js?v=7"></script>
 </body>
 </html>

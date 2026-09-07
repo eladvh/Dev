@@ -97,73 +97,30 @@ const EXPRESSIONS = [
   },
 ];
 
-// Simplified cartoon face parts (eyebrows/eyes/mouth) shown as a practice
-// guide overlay, one per expression key, drawn on a 200x200 viewBox.
-const FACE_GUIDES = {
-  smile: `
-    <path d="M55,58 Q70,50 85,58" />
-    <path d="M115,58 Q130,50 145,58" />
-    <circle cx="70" cy="82" r="9" fill="#fff" stroke="none" />
-    <circle cx="130" cy="82" r="9" fill="#fff" stroke="none" />
-    <path d="M62,132 Q100,162 138,132" />
-  `,
-  laugh: `
-    <path d="M52,55 Q70,44 88,55" />
-    <path d="M112,55 Q130,44 148,55" />
-    <path d="M58,78 Q70,86 82,78" />
-    <path d="M118,78 Q130,86 142,78" />
-    <ellipse cx="100" cy="140" rx="34" ry="22" fill="#fff" fill-opacity="0.15" />
-  `,
-  sad: `
-    <path d="M55,62 Q70,52 88,60" />
-    <path d="M112,60 Q130,52 145,62" />
-    <circle cx="70" cy="85" r="9" fill="#fff" stroke="none" />
-    <circle cx="130" cy="85" r="9" fill="#fff" stroke="none" />
-    <path d="M65,155 Q100,128 135,155" />
-  `,
-  surprised: `
-    <path d="M52,50 Q70,36 88,48" />
-    <path d="M112,48 Q130,36 148,50" />
-    <circle cx="70" cy="82" r="15" fill="none" />
-    <circle cx="130" cy="82" r="15" fill="none" />
-    <circle cx="100" cy="145" r="18" fill="none" />
-  `,
-  angry: `
-    <path d="M55,48 L85,62" />
-    <path d="M145,48 L115,62" />
-    <circle cx="70" cy="82" r="9" fill="#fff" stroke="none" />
-    <circle cx="130" cy="82" r="9" fill="#fff" stroke="none" />
-    <path d="M65,148 Q100,138 135,148" />
-  `,
-  wink: `
-    <path d="M55,58 Q70,50 85,58" />
-    <path d="M115,58 Q130,50 145,58" />
-    <line x1="60" y1="82" x2="80" y2="82" />
-    <circle cx="130" cy="82" r="9" fill="#fff" stroke="none" />
-    <path d="M65,135 Q100,158 135,135" />
-  `,
-  kiss: `
-    <path d="M55,58 Q70,50 85,58" />
-    <path d="M115,58 Q130,50 145,58" />
-    <circle cx="70" cy="82" r="9" fill="#fff" stroke="none" />
-    <circle cx="130" cy="82" r="9" fill="#fff" stroke="none" />
-    <ellipse cx="100" cy="142" rx="13" ry="11" fill="none" />
-  `,
-  disgusted: `
-    <path d="M55,50 L85,64" />
-    <path d="M145,50 L115,64" />
-    <circle cx="70" cy="84" r="9" fill="#fff" stroke="none" />
-    <circle cx="130" cy="84" r="9" fill="#fff" stroke="none" />
-    <path d="M92,90 Q100,98 108,90" />
-    <path d="M62,148 Q80,132 100,146 Q120,160 138,140" />
-  `,
-  sleepy: `
-    <path d="M58,60 Q70,54 82,60" />
-    <path d="M118,60 Q130,54 142,60" />
-    <line x1="60" y1="84" x2="80" y2="84" />
-    <line x1="120" y1="84" x2="140" y2="84" />
-    <path d="M70,144 Q100,152 130,144" />
-  `,
+// MediaPipe FaceLandmarker's 468-point face mesh: stable landmark indices
+// used to anchor the "help" guide to the player's actual eyes/mouth.
+const LM = {
+  mouthLeft: 61,
+  mouthRight: 291,
+  eyeALeft: 33,
+  eyeAInner: 133,
+  eyeBInner: 362,
+  eyeBRight: 263,
+};
+
+// How to draw the help guide's mouth/eyes/eyebrows for each target
+// expression, anchored to the player's own detected face landmarks rather
+// than a fixed illustration, so it overlays directly on their eyes/mouth.
+const FACE_GUIDE_STYLES = {
+  smile: { mouth: "smile", eyes: "open", brows: "normal" },
+  laugh: { mouth: "laugh", eyes: "squint", brows: "normal" },
+  sad: { mouth: "frown", eyes: "open", brows: "innerUp" },
+  surprised: { mouth: "round", eyes: "wide", brows: "raised" },
+  angry: { mouth: "flat", eyes: "open", brows: "down" },
+  wink: { mouth: "smile", eyes: "wink", brows: "normal" },
+  kiss: { mouth: "pucker", eyes: "open", brows: "normal" },
+  disgusted: { mouth: "wavy", eyes: "open", brows: "down" },
+  sleepy: { mouth: "flat", eyes: "closed", brows: "relaxed" },
 };
 
 function avg(...vals) {
@@ -195,8 +152,6 @@ const scoreEl = document.getElementById("score");
 const roundEl = document.getElementById("round");
 const statusEl = document.getElementById("status");
 const matchBanner = document.getElementById("match-banner");
-const faceGuide = document.getElementById("face-guide");
-const faceGuideFeatures = document.getElementById("face-guide-features");
 const helpBtn = document.getElementById("help-btn");
 const skipBtn = document.getElementById("skip-btn");
 
@@ -221,16 +176,11 @@ function speak(text) {
   window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
 }
 
-function updateFaceGuide() {
-  faceGuideFeatures.innerHTML = FACE_GUIDES[target.key] || "";
-}
-
 function showTarget() {
   targetEmojiEl.textContent = target.emoji;
   targetEmojiEl.classList.remove("pop");
   void targetEmojiEl.offsetWidth;
   targetEmojiEl.classList.add("pop");
-  updateFaceGuide();
   speak(`Do a ${target.label} face!`);
 }
 
@@ -270,9 +220,7 @@ function skipRound() {
 
 helpBtn.addEventListener("click", () => {
   helpVisible = !helpVisible;
-  faceGuide.hidden = !helpVisible;
   helpBtn.classList.toggle("active", helpVisible);
-  if (helpVisible) updateFaceGuide();
 });
 
 skipBtn.addEventListener("click", skipRound);
@@ -375,6 +323,12 @@ function handleResult(result) {
 
   drawProgressRing(allMatch ? confidence : 0);
 
+  if (helpVisible) {
+    for (const landmarks of result.faceLandmarks || []) {
+      drawFaceGuide(landmarks, target.key);
+    }
+  }
+
   if (allMatch) {
     statusEl.textContent =
       faces.length > 1 ? "Both of you match — hold it!" : "Matched — hold it!";
@@ -400,4 +354,131 @@ function drawProgressRing(progress01) {
   ctx.lineWidth = 12;
   ctx.strokeStyle = `rgba(52, 211, 153, ${0.3 + pct * 0.7})`;
   ctx.strokeRect(6, 6, w - 12, h - 12);
+}
+
+function pt(landmarks, index) {
+  const lm = landmarks[index];
+  return { x: lm.x * overlay.width, y: lm.y * overlay.height };
+}
+
+function mid(a, b) {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+function dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+// Draws the target expression's mouth/eyes/eyebrows shape anchored to the
+// player's own detected face (an AR-style trace guide), rather than a fixed
+// illustration, so it lines up with their eyes and mouth in the live video.
+function drawFaceGuide(landmarks, key) {
+  const style = FACE_GUIDE_STYLES[key];
+  if (!style) return;
+
+  const mouthLeft = pt(landmarks, LM.mouthLeft);
+  const mouthRight = pt(landmarks, LM.mouthRight);
+  const eyeACenter = mid(pt(landmarks, LM.eyeALeft), pt(landmarks, LM.eyeAInner));
+  const eyeBCenter = mid(pt(landmarks, LM.eyeBInner), pt(landmarks, LM.eyeBRight));
+  const eyeAWidth = dist(pt(landmarks, LM.eyeALeft), pt(landmarks, LM.eyeAInner));
+  const eyeBWidth = dist(pt(landmarks, LM.eyeBInner), pt(landmarks, LM.eyeBRight));
+  const faceMidX = (eyeACenter.x + eyeBCenter.x) / 2;
+
+  ctx.save();
+  ctx.strokeStyle = "#ffb800";
+  ctx.fillStyle = "#ffb800";
+  ctx.lineWidth = Math.max(3, overlay.width * 0.01);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+
+  drawGuideMouth(style.mouth, mouthLeft, mouthRight);
+  // "wink" always closes the same (A-side) eye so it stays consistent frame to frame.
+  drawGuideEye(style.eyes === "wink" ? "closed" : style.eyes, eyeACenter, eyeAWidth);
+  drawGuideEye(style.eyes === "wink" ? "open" : style.eyes, eyeBCenter, eyeBWidth);
+  drawGuideBrow(style.brows, eyeACenter, eyeAWidth, eyeACenter.x < faceMidX);
+  drawGuideBrow(style.brows, eyeBCenter, eyeBWidth, eyeBCenter.x < faceMidX);
+
+  ctx.restore();
+}
+
+function drawGuideMouth(style, left, right) {
+  const cx = (left.x + right.x) / 2;
+  const cy = (left.y + right.y) / 2;
+  const w = dist(left, right);
+  ctx.beginPath();
+  switch (style) {
+    case "laugh":
+      ctx.moveTo(left.x, left.y);
+      ctx.quadraticCurveTo(cx, cy + w * 0.55, right.x, right.y);
+      break;
+    case "frown":
+      ctx.moveTo(left.x, left.y);
+      ctx.quadraticCurveTo(cx, cy - w * 0.35, right.x, right.y);
+      break;
+    case "round":
+      ctx.ellipse(cx, cy + w * 0.15, w * 0.3, w * 0.32, 0, 0, Math.PI * 2);
+      break;
+    case "flat":
+      ctx.moveTo(left.x, left.y);
+      ctx.lineTo(right.x, right.y);
+      break;
+    case "pucker":
+      ctx.ellipse(cx, cy, w * 0.16, w * 0.14, 0, 0, Math.PI * 2);
+      break;
+    case "wavy":
+      ctx.moveTo(left.x, left.y);
+      ctx.quadraticCurveTo(cx - w * 0.2, cy - w * 0.2, cx, cy);
+      ctx.quadraticCurveTo(cx + w * 0.2, cy + w * 0.25, right.x, right.y);
+      break;
+    case "smile":
+    default:
+      ctx.moveTo(left.x, left.y);
+      ctx.quadraticCurveTo(cx, cy + w * 0.35, right.x, right.y);
+      break;
+  }
+  ctx.stroke();
+}
+
+function drawGuideEye(style, center, width) {
+  ctx.beginPath();
+  if (style === "closed") {
+    ctx.moveTo(center.x - width * 0.5, center.y);
+    ctx.lineTo(center.x + width * 0.5, center.y);
+  } else {
+    const r = (style === "wide" ? 0.5 : style === "squint" ? 0.22 : 0.35) * width;
+    ctx.arc(center.x, center.y, r, 0, Math.PI * 2);
+  }
+  ctx.stroke();
+}
+
+function drawGuideBrow(style, center, width, isOnLeftSide) {
+  const y = center.y - width * 0.9;
+  const half = width * 0.5;
+  const innerX = isOnLeftSide ? center.x + half : center.x - half;
+  const outerX = isOnLeftSide ? center.x - half : center.x + half;
+  ctx.beginPath();
+  switch (style) {
+    case "raised":
+      ctx.moveTo(outerX, y + width * 0.15);
+      ctx.quadraticCurveTo(center.x, y - width * 0.3, innerX, y + width * 0.15);
+      break;
+    case "down":
+      ctx.moveTo(outerX, y - width * 0.1);
+      ctx.lineTo(innerX, y + width * 0.2);
+      break;
+    case "innerUp":
+      ctx.moveTo(outerX, y + width * 0.15);
+      ctx.lineTo(innerX, y - width * 0.15);
+      break;
+    case "relaxed":
+      ctx.moveTo(outerX, y + width * 0.05);
+      ctx.lineTo(innerX, y + width * 0.05);
+      break;
+    case "normal":
+    default:
+      ctx.moveTo(outerX, y);
+      ctx.quadraticCurveTo(center.x, y - width * 0.1, innerX, y);
+      break;
+  }
+  ctx.stroke();
 }
