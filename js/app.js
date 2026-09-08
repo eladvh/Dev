@@ -21,23 +21,21 @@ const CELEBRATE_MS = 2000;
 // Each expression scores a raw 0..1 confidence from face blendshape
 // coefficients. The highest-scoring expression (above NEUTRAL_THRESHOLD)
 // is treated as the face's current expression; otherwise it's "neutral".
+// Spoken/displayed labels are language-dependent and live in STRINGS below.
 const EXPRESSIONS = [
   {
     key: "smile",
     emoji: "😊",
-    label: "happy",
     calc: (b) => avg(b("mouthSmileLeft"), b("mouthSmileRight")) * (1 - b("jawOpen") * 0.7),
   },
   {
     key: "laugh",
     emoji: "😂",
-    label: "laughing",
     calc: (b) => avg(b("mouthSmileLeft"), b("mouthSmileRight")) * b("jawOpen"),
   },
   {
     key: "sad",
     emoji: "😢",
-    label: "sad",
     // mouthFrown is the primary, controllable cue; most people don't raise
     // their inner brows on cue, so that's a bonus rather than a requirement
     // (an even split with avg() made this expression very hard to trigger).
@@ -46,7 +44,6 @@ const EXPRESSIONS = [
   {
     key: "surprised",
     emoji: "😲",
-    label: "surprised",
     calc: (b) =>
       avg(
         b("eyeWideLeft"),
@@ -59,14 +56,12 @@ const EXPRESSIONS = [
   {
     key: "angry",
     emoji: "😠",
-    label: "angry",
     calc: (b) =>
       avg(b("browDownLeft"), b("browDownRight"), b("mouthPressLeft"), b("mouthPressRight")),
   },
   {
     key: "wink",
     emoji: "😉",
-    label: "winking",
     calc: (b) => {
       const l = b("eyeBlinkLeft");
       const r = b("eyeBlinkRight");
@@ -76,19 +71,16 @@ const EXPRESSIONS = [
   {
     key: "kiss",
     emoji: "😘",
-    label: "a kissy",
     calc: (b) => b("mouthPucker"),
   },
   {
     key: "disgusted",
     emoji: "🤢",
-    label: "disgusted",
     calc: (b) => avg(b("noseSneerLeft"), b("noseSneerRight")),
   },
   {
     key: "sleepy",
     emoji: "😴",
-    label: "sleepy",
     calc: (b) => {
       const l = b("eyeBlinkLeft");
       const r = b("eyeBlinkRight");
@@ -96,6 +88,78 @@ const EXPRESSIONS = [
     },
   },
 ];
+
+const STRINGS = {
+  en: {
+    dir: "ltr",
+    speechLang: "en-US",
+    title: "Emoji Faces 🎭",
+    subtitle:
+      "Copy the emoji's face with your own face! Great for two players — get your faces in frame together.",
+    startBtn: "Start Camera & Play",
+    scoreLabel: "Score:",
+    roundLabel: "Round",
+    makeThisFace: "Make this face:",
+    helpBtn: "🍪 Help",
+    skipBtn: "⏭ Skip",
+    niceBanner: "Nice! 🎉",
+    loading: "Loading face detector…",
+    getInFrame: "Get your face(s) in frame!",
+    noFace: "Can't see a face — move closer or add more light.",
+    matchedSolo: "Matched — hold it!",
+    matchedBoth: "Both of you match — hold it!",
+    tryAgain: (emoji) => `Try again — make it more like ${emoji}`,
+    needBoth: "Both faces need to match the emoji",
+    camDenied: "Camera permission was denied. Please allow camera access and try again.",
+    startFailed: (msg) => `Couldn't start: ${msg}`,
+    doFace: (label) => `Do a ${label} face!`,
+    exprLabels: {
+      smile: "happy",
+      laugh: "laughing",
+      sad: "sad",
+      surprised: "surprised",
+      angry: "angry",
+      wink: "winking",
+      kiss: "a kissy",
+      disgusted: "disgusted",
+      sleepy: "sleepy",
+    },
+  },
+  he: {
+    dir: "rtl",
+    speechLang: "he-IL",
+    title: "פרצופי אימוג'י 🎭",
+    subtitle: "תחקו את הפרצוף של האימוג'י! משחק נהדר לשניים — תכניסו את שני הפרצופים למסך יחד.",
+    startBtn: "התחילו מצלמה ושחקו",
+    scoreLabel: "ניקוד:",
+    roundLabel: "סיבוב",
+    makeThisFace: "עשו את הפרצוף הזה:",
+    helpBtn: "🍪 עזרה",
+    skipBtn: "⏭ דלגו",
+    niceBanner: "יופי! 🎉",
+    loading: "טוען זיהוי פנים…",
+    getInFrame: "הכניסו את הפנים למסגרת!",
+    noFace: "לא רואים פנים — התקרבו או הוסיפו תאורה.",
+    matchedSolo: "התאמה — תחזיקו רגע!",
+    matchedBoth: "שניכם מתאימים — תחזיקו רגע!",
+    tryAgain: (emoji) => `נסו שוב — שיהיה יותר דומה ל־${emoji}`,
+    needBoth: "שני הפרצופים צריכים להתאים לאימוג'י",
+    camDenied: "הגישה למצלמה נדחתה. אנא אשרו גישה למצלמה ונסו שוב.",
+    startFailed: (msg) => `ההפעלה נכשלה: ${msg}`,
+    doFace: (label) => `תעשו פרצוף ${label}!`,
+    exprLabels: {
+      smile: "שמח",
+      laugh: "צוחק",
+      sad: "עצוב",
+      surprised: "מופתע",
+      angry: "כועס",
+      wink: "קורץ",
+      kiss: "נשיקה",
+      disgusted: "נגעל",
+      sleepy: "ישנוני",
+    },
+  },
+};
 
 // MediaPipe FaceLandmarker's 468-point face mesh: stable landmark indices
 // used to anchor the "help" guide to the player's actual eyes/mouth.
@@ -154,6 +218,13 @@ const statusEl = document.getElementById("status");
 const matchBanner = document.getElementById("match-banner");
 const helpBtn = document.getElementById("help-btn");
 const skipBtn = document.getElementById("skip-btn");
+const appTitleEl = document.getElementById("app-title");
+const appSubtitleEl = document.getElementById("app-subtitle");
+const scoreLabelEl = document.getElementById("score-label");
+const roundLabelEl = document.getElementById("round-label");
+const makeFaceLabelEl = document.getElementById("make-face-label");
+const langEnBtn = document.getElementById("lang-en");
+const langHeBtn = document.getElementById("lang-he");
 
 // ---- Game state ----
 let score = 0;
@@ -165,6 +236,35 @@ let celebrating = false;
 let celebrateTimeoutId = null;
 let helpVisible = false;
 
+let lang = localStorage.getItem("emojiFacesLang") || (navigator.language.startsWith("he") ? "he" : "en");
+
+function t() {
+  return STRINGS[lang];
+}
+
+function applyLanguage(newLang) {
+  lang = newLang;
+  localStorage.setItem("emojiFacesLang", lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = t().dir;
+  langEnBtn.classList.toggle("active", lang === "en");
+  langHeBtn.classList.toggle("active", lang === "he");
+
+  appTitleEl.textContent = t().title;
+  appSubtitleEl.textContent = t().subtitle;
+  startBtn.textContent = t().startBtn;
+  scoreLabelEl.textContent = t().scoreLabel;
+  roundLabelEl.textContent = t().roundLabel;
+  makeFaceLabelEl.textContent = t().makeThisFace;
+  helpBtn.textContent = t().helpBtn;
+  skipBtn.textContent = t().skipBtn;
+  matchBanner.textContent = t().niceBanner;
+}
+
+langEnBtn.addEventListener("click", () => applyLanguage("en"));
+langHeBtn.addEventListener("click", () => applyLanguage("he"));
+applyLanguage(lang);
+
 function pickTarget(excludeKey) {
   const pool = excludeKey ? EXPRESSIONS.filter((e) => e.key !== excludeKey) : EXPRESSIONS;
   return pool[Math.floor(Math.random() * pool.length)];
@@ -173,7 +273,9 @@ function pickTarget(excludeKey) {
 function speak(text) {
   if (!("speechSynthesis" in window)) return;
   window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(new SpeechSynthesisUtterance(text));
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = t().speechLang;
+  window.speechSynthesis.speak(utterance);
 }
 
 function showTarget() {
@@ -181,7 +283,7 @@ function showTarget() {
   targetEmojiEl.classList.remove("pop");
   void targetEmojiEl.offsetWidth;
   targetEmojiEl.classList.add("pop");
-  speak(`Do a ${target.label} face!`);
+  speak(t().doFace(t().exprLabels[target.key]));
 }
 
 function nextRound() {
@@ -195,7 +297,7 @@ function celebrate() {
   celebrating = true;
   matchStartTime = null;
   matchBanner.hidden = false;
-  statusEl.textContent = "Nice! 🎉";
+  statusEl.textContent = t().niceBanner;
   celebrateTimeoutId = setTimeout(() => {
     score += 1;
     round += 1;
@@ -268,18 +370,16 @@ async function start() {
     gameScreen.hidden = false;
     showTarget();
 
-    statusEl.textContent = "Loading face detector…";
+    statusEl.textContent = t().loading;
     const filesetResolver = await FilesetResolver.forVisionTasks(WASM_BASE);
     faceLandmarker = await createFaceLandmarker(filesetResolver);
-    statusEl.textContent = "Get your face(s) in frame!";
+    statusEl.textContent = t().getInFrame;
 
     requestAnimationFrame(detectLoop);
   } catch (err) {
     console.error(err);
     startError.textContent =
-      err && err.name === "NotAllowedError"
-        ? "Camera permission was denied. Please allow camera access and try again."
-        : `Couldn't start: ${err.message || err}`;
+      err && err.name === "NotAllowedError" ? t().camDenied : t().startFailed(err.message || err);
     startError.hidden = false;
     startBtn.disabled = false;
   }
@@ -312,7 +412,7 @@ function handleResult(result) {
 
   const faces = result.faceBlendshapes || [];
   if (faces.length === 0) {
-    statusEl.textContent = "Can't see a face — move closer or add more light.";
+    statusEl.textContent = t().noFace;
     matchStartTime = null;
     return;
   }
@@ -330,8 +430,7 @@ function handleResult(result) {
   }
 
   if (allMatch) {
-    statusEl.textContent =
-      faces.length > 1 ? "Both of you match — hold it!" : "Matched — hold it!";
+    statusEl.textContent = faces.length > 1 ? t().matchedBoth : t().matchedSolo;
     if (matchStartTime === null) matchStartTime = performance.now();
     if (performance.now() - matchStartTime >= HOLD_MS) {
       matchStartTime = null;
@@ -339,10 +438,7 @@ function handleResult(result) {
     }
   } else {
     matchStartTime = null;
-    statusEl.textContent =
-      faces.length > 1
-        ? "Both faces need to match the emoji"
-        : `Try again — make it more like ${target.emoji}`;
+    statusEl.textContent = faces.length > 1 ? t().needBoth : t().tryAgain(target.emoji);
   }
 }
 

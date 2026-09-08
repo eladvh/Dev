@@ -4,25 +4,29 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Emoji Faces</title>
-  <link rel="stylesheet" href="css/style.css?v=7" />
+  <link rel="stylesheet" href="css/style.css?v=8" />
 </head>
 <body>
   <div id="start-screen" class="screen">
-    <h1>Emoji Faces 🎭</h1>
-    <p>Copy the emoji's face with your own face! Great for two players — get your faces in frame together.</p>
+    <div class="lang-toggle">
+      <button id="lang-en" class="lang-btn" type="button">EN</button>
+      <button id="lang-he" class="lang-btn" type="button">עברית</button>
+    </div>
+    <h1 id="app-title">Emoji Faces 🎭</h1>
+    <p id="app-subtitle">Copy the emoji's face with your own face! Great for two players — get your faces in frame together.</p>
     <button id="start-btn">Start Camera &amp; Play</button>
     <p id="start-error" class="error" hidden></p>
-    <p class="build-version">Build v7</p>
+    <p class="build-version">Build v8</p>
   </div>
 
   <div id="game-screen" class="screen" hidden>
     <div class="hud">
-      <div class="score">Score: <span id="score">0</span></div>
-      <div class="round">Round <span id="round">1</span></div>
+      <div class="score"><span id="score-label">Score:</span> <span id="score">0</span></div>
+      <div class="round"><span id="round-label">Round</span> <span id="round">1</span></div>
     </div>
 
     <div class="target-wrap">
-      <div class="label">Make this face:</div>
+      <div class="label" id="make-face-label">Make this face:</div>
       <div id="target-emoji" class="target-emoji">😊</div>
     </div>
 
@@ -40,6 +44,6 @@
     <div id="status" class="status">Loading face detector…</div>
   </div>
 
-  <script type="module" src="js/app.js?v=7"></script>
+  <script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>
