@@ -31,15 +31,24 @@ const EXPRESSIONS = [
   {
     key: "laugh",
     emoji: "😂",
-    calc: (b) => avg(b("mouthSmileLeft"), b("mouthSmileRight")) * b("jawOpen"),
+    // Multiplying smile*jawOpen required both to be strongly present at once;
+    // real open-mouth grins often register as only moderate on either signal
+    // individually, so the product stayed too low to ever win. Summing them
+    // (each independently amplified) still loses to plain "smile" when the
+    // jaw is closed, since that expression's own formula favors a closed jaw.
+    calc: (b) => Math.min(1, avg(b("mouthSmileLeft"), b("mouthSmileRight")) * 0.65 + b("jawOpen") * 0.65),
   },
   {
     key: "sad",
     emoji: "😢",
-    // mouthFrown is the primary, controllable cue; most people don't raise
-    // their inner brows on cue, so that's a bonus rather than a requirement
-    // (an even split with avg() made this expression very hard to trigger).
-    calc: (b) => Math.min(1, avg(b("mouthFrownLeft"), b("mouthFrownRight")) * 1.4 + b("browInnerUp") * 0.25),
+    // mouthFrown or the lower-lip-down pout are the primary, controllable
+    // cues (people pout differently); browInnerUp is a bonus since most
+    // people don't raise their inner brows on cue.
+    calc: (b) => {
+      const frown = avg(b("mouthFrownLeft"), b("mouthFrownRight"));
+      const pout = avg(b("mouthLowerDownLeft"), b("mouthLowerDownRight"));
+      return Math.min(1, Math.max(frown, pout) * 1.5 + b("browInnerUp") * 0.25);
+    },
   },
   {
     key: "surprised",
@@ -56,8 +65,15 @@ const EXPRESSIONS = [
   {
     key: "angry",
     emoji: "😠",
+    // Furrowed brows are the primary, more voluntarily-controllable cue;
+    // pressed lips are a bonus. Averaging all four diluted the score too
+    // much when only one cue was strongly present.
     calc: (b) =>
-      avg(b("browDownLeft"), b("browDownRight"), b("mouthPressLeft"), b("mouthPressRight")),
+      Math.min(
+        1,
+        avg(b("browDownLeft"), b("browDownRight")) * 1.5 +
+          avg(b("mouthPressLeft"), b("mouthPressRight")) * 0.4
+      ),
   },
   {
     key: "wink",
